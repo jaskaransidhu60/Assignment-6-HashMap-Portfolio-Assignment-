@@ -1,3 +1,10 @@
+# Name: Jaskaran Singh Sidhu
+# OSU Email: sidhuja@oregonstate.edu
+# Course: CS261 - Data Structures
+# Assignment: 6 - Open Addressing HashMap Implementation
+# Description: Implements a HashMap using Open Addressing with Quadratic Probing.
+# It includes put, resize, load factor management, and iterator functionality.
+
 from a6_include import DynamicArray, HashEntry, hash_function_1
 
 
@@ -12,21 +19,15 @@ class HashMap:
             self._buckets.append(None)
 
     def get_capacity(self) -> int:
-        """
-        Return the current capacity of the hash map.
-        """
         return self._capacity
 
     def get_size(self) -> int:
-        """
-        Return the current size (number of elements) of the hash map.
-        """
         return self._size
 
     def _find_slot(self, key: str) -> int:
         index = self._hash_function(key) % self._capacity
         for i in range(self._capacity):
-            probe = (index + i**2) % self._capacity
+            probe = (index + i ** 2) % self._capacity
             entry = self._buckets.get_at_index(probe)
             if entry is None or entry.key == key or entry.is_tombstone:
                 return probe
