@@ -157,4 +157,6 @@ class HashMap:
             self._index += 1
             if entry is not None and not entry.is_tombstone:
                 return entry
+
+
         raise StopIteration
