@@ -190,4 +190,3 @@ class HashMap:
             if entry is not None and not entry.is_tombstone:
                 return entry
         raise StopIteration
-
