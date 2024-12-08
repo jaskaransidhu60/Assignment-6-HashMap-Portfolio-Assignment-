@@ -5,136 +5,30 @@
 # Description: Implements a HashMap using Open Addressing with Quadratic Probing.
 # It includes put, resize, load factor management, and iterator functionality.
 
-from a6_include import DynamicArray, LinkedList, hash_function_1, hash_function_2
+from a6_include import (DynamicArray, HashEntry, hash_function_1, hash_function_2)
 
 class HashMap:
-    def __init__(self, capacity: int = 11, function=hash_function_1):
+    def __init__(self, capacity: int, function) -> None:
         """
-        Initialize HashMap with given capacity and hash function.
+        Initialize new HashMap that uses quadratic probing for collision resolution.
         """
         self._buckets = DynamicArray()
         self._capacity = self._next_prime(capacity)
+        for _ in range(self._capacity):
+            self._buckets.append(None)
         self._hash_function = function
         self._size = 0
-        for _ in range(self._capacity):
-            self._buckets.append(LinkedList())
 
-    def put(self, key: str, value: object) -> None:
+    def __str__(self) -> str:
         """
-        Add a key-value pair to the hash map. Update value if key exists.
-        Resize the table if the load factor >= 1.0.
+        Override string method to provide more readable output.
         """
-        if self.table_load() >= 1.0:
-            self.resize_table(self._capacity * 2)
-        
-        index = self._hash_function(key) % self._capacity
-        bucket = self._buckets[index]
-        
-        node = bucket.contains(key)
-        if node:
-            node.value = value
-        else:
-            bucket.insert(key, value)
-            self._size += 1
-
-    def get(self, key: str):
-        """
-        Return value associated with the key, or None if not found.
-        """
-        index = self._hash_function(key) % self._capacity
-        bucket = self._buckets[index]
-        node = bucket.contains(key)
-        return node.value if node else None
-
-    def remove(self, key: str) -> None:
-        """
-        Remove the key-value pair from the hash map.
-        """
-        index = self._hash_function(key) % self._capacity
-        bucket = self._buckets[index]
-        if bucket.remove(key):
-            self._size -= 1
-
-    def contains_key(self, key: str) -> bool:
-        """
-        Check if the key exists in the hash map.
-        """
-        return self.get(key) is not None
-
-    def table_load(self) -> float:
-        """
-        Return the current load factor.
-        """
-        return self._size / self._capacity
-
-    def empty_buckets(self) -> int:
-        """
-        Return the number of empty buckets.
-        """
-        return sum(1 for i in range(self._capacity) if self._buckets[i].length() == 0)
-
-    def resize_table(self, new_capacity: int) -> None:
-        """
-        Resize the hash table to the next prime greater than new_capacity.
-        """
-        if new_capacity < self._size:
-            return
-        new_capacity = self._next_prime(new_capacity)
-        old_buckets = self._buckets
-
-        self._buckets = DynamicArray()
-        self._capacity = new_capacity
-        self._size = 0
-        for _ in range(self._capacity):
-            self._buckets.append(LinkedList())
-
-        for i in range(old_buckets.length()):
-            for node in old_buckets[i]:
-                self.put(node.key, node.value)
-
-    def get_keys_and_values(self) -> DynamicArray:
-        """
-        Return a DynamicArray containing all key-value pairs.
-        """
-        result = DynamicArray()
-        for i in range(self._capacity):
-            for node in self._buckets[i]:
-                result.append((node.key, node.value))
-        return result
-
-    def clear(self) -> None:
-        """
-        Clear all key-value pairs from the hash map.
-        """
-        for i in range(self._capacity):
-            self._buckets[i] = LinkedList()
-        self._size = 0
-
-    @staticmethod
-    def find_mode(da: DynamicArray) -> tuple[DynamicArray, int]:
-        """
-        Return the mode(s) of the input DynamicArray and their frequency.
-        """
-        map = HashMap()
-        max_frequency = 0
-        result = DynamicArray()
-
-        for value in da:
-            count = map.get(value)
-            count = count + 1 if count else 1
-            map.put(value, count)
-            if count > max_frequency:
-                max_frequency = count
-
-        for key, value in map.get_keys_and_values():
-            if value == max_frequency:
-                result.append(key)
-        return result, max_frequency
+        out = ''
+        for i in range(self._buckets.length()):
+            out += str(i) + ': ' + str(self._buckets[i]) + '\n'
+        return out
 
     def _next_prime(self, capacity: int) -> int:
-        """
-        Return the next prime number >= capacity.
-        """
         if capacity % 2 == 0:
             capacity += 1
         while not self._is_prime(capacity):
@@ -142,28 +36,125 @@ class HashMap:
         return capacity
 
     @staticmethod
-    def _is_prime(n: int) -> bool:
-        """
-        Check if a number is prime.
-        """
-        if n < 2 or n % 2 == 0:
-            return n == 2
-        for i in range(3, int(n ** 0.5) + 1, 2):
-            if n % i == 0:
+    def _is_prime(capacity: int) -> bool:
+        if capacity == 2 or capacity == 3:
+            return True
+        if capacity == 1 or capacity % 2 == 0:
+            return False
+        factor = 3
+        while factor ** 2 <= capacity:
+            if capacity % factor == 0:
                 return False
+            factor += 2
         return True
 
+    def get_size(self) -> int:
+        return self._size
 
-# ------------------- BASIC TESTING ---------------------------------------- #
-if __name__ == "__main__":
-    m = HashMap(11, hash_function_1)
-    m.put('key1', 10)
-    print(m.get('key1'))  # Output: 10
-    m.put('key1', 20)
-    print(m.get('key1'))  # Output: 20
-    print(m.contains_key('key2'))  # Output: False
-    print(m.empty_buckets())  # Output: 10
-    m.resize_table(20)
-    print(m.get_keys_and_values())  # Output: [('key1', 20)]
-    da = DynamicArray(["a", "b", "a", "c", "b", "b"])
-    print(HashMap.find_mode(da))  # Output: (['b'], 3)
+    def get_capacity(self) -> int:
+        return self._capacity
+
+    def put(self, key: str, value: object) -> None:
+        if self.table_load() >= 0.5:
+            self.resize_table(self._capacity * 2)
+        index = self._hash_function(key) % self._capacity
+        i = 0
+        while True:
+            current_index = (index + i ** 2) % self._capacity
+            current_entry = self._buckets[current_index]
+            if current_entry is None or current_entry.is_tombstone:
+                self._buckets[current_index] = HashEntry(key, value)
+                self._size += 1
+                return
+            elif current_entry.key == key:
+                current_entry.value = value
+                return
+            i += 1
+
+    def resize_table(self, new_capacity: int) -> None:
+        if new_capacity < self._size or not self._is_prime(new_capacity):
+            return
+        old_buckets = self._buckets
+        self._buckets = DynamicArray()
+        self._capacity = new_capacity
+        self._size = 0
+        for _ in range(new_capacity):
+            self._buckets.append(None)
+        for i in range(old_buckets.length()):
+            entry = old_buckets[i]
+            if entry is not None and not entry.is_tombstone:
+                self.put(entry.key, entry.value)
+
+    def table_load(self) -> float:
+        return self._size / self._capacity
+
+    def empty_buckets(self) -> int:
+        count = 0
+        for i in range(self._buckets.length()):
+            if self._buckets[i] is None or self._buckets[i].is_tombstone:
+                count += 1
+        return count
+
+    def get(self, key: str) -> object:
+        index = self._hash_function(key) % self._capacity
+        i = 0
+        while True:
+            current_index = (index + i ** 2) % self._capacity
+            current_entry = self._buckets[current_index]
+            if current_entry is None:
+                return None
+            if current_entry.key == key and not current_entry.is_tombstone:
+                return current_entry.value
+            i += 1
+
+    def contains_key(self, key: str) -> bool:
+        index = self._hash_function(key) % self._capacity
+        i = 0
+        while True:
+            current_index = (index + i ** 2) % self._capacity
+            current_entry = self._buckets[current_index]
+            if current_entry is None:
+                return False
+            if current_entry.key == key and not current_entry.is_tombstone:
+                return True
+            i += 1
+
+    def remove(self, key: str) -> None:
+        index = self._hash_function(key) % self._capacity
+        i = 0
+        while True:
+            current_index = (index + i ** 2) % self._capacity
+            current_entry = self._buckets[current_index]
+            if current_entry is None:
+                return
+            if current_entry.key == key and not current_entry.is_tombstone:
+                current_entry.is_tombstone = True
+                self._size -= 1
+                return
+            i += 1
+
+    def get_keys_and_values(self) -> DynamicArray:
+        result = DynamicArray()
+        for i in range(self._buckets.length()):
+            entry = self._buckets[i]
+            if entry is not None and not entry.is_tombstone:
+                result.append((entry.key, entry.value))
+        return result
+
+    def clear(self) -> None:
+        self._buckets = DynamicArray()
+        self._size = 0
+        for _ in range(self._capacity):
+            self._buckets.append(None)
+
+    def __iter__(self):
+        self._index = 0
+        return self
+
+    def __next__(self):
+        while self._index < self._buckets.length():
+            entry = self._buckets[self._index]
+            self._index += 1
+            if entry is not None and not entry.is_tombstone:
+                return entry
+        raise StopIteration
